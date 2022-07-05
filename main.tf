@@ -40,7 +40,7 @@ resource "azurerm_virtual_machine" "windows" {
   name                = "aoxlrtest"
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
-  vm_size             = "Standard_D2s_v3"
+  vm_size             = "Standard D4ds v5"
   network_interface_ids = [
     azurerm_network_interface.nic.id
   ]
@@ -56,9 +56,9 @@ resource "azurerm_virtual_machine" "windows" {
     name              = "aorxlrtest_OS_Disk"
     caching           = "ReadWrite"
     create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
+    managed_disk_type = "Standard SSD LRS"
     os_type           = "Windows"
-    disk_size_gb      = 30
+    disk_size_gb      = 127
   }
 
   os_profile {
@@ -70,12 +70,12 @@ resource "azurerm_virtual_machine" "windows" {
   os_profile_windows_config {}
 }
 resource "azurerm_managed_disk" "datadisk" {
-  name                 = "aorxlr_DataDisk_0"
+  name                 = "aoxlr_DataDisk_0"
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
-  storage_account_type = "Standard_LRS"
+  storage_account_type = "Standard SSD LRS"
   create_option        = "Empty"
-  disk_size_gb         = 10
+  disk_size_gb         = 128
 }
 
 resource "azurerm_virtual_machine_data_disk_attachment" "disk_attach" {
@@ -84,8 +84,8 @@ resource "azurerm_virtual_machine_data_disk_attachment" "disk_attach" {
   lun                = "0"
   caching            = "ReadWrite"
 }
-
-resource "azurerm_network_security_group" "xlrnsg" {
+}
+/* resource "azurerm_network_security_group" "xlrnsg" {
   name                = "xlrnsgaa"
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
@@ -110,4 +110,4 @@ resource "azurerm_subnet_network_security_group_association" "nsgassociation" {
   depends_on = [
     azurerm_network_security_group.xlrnsg
   ]
-}
+} */
