@@ -40,7 +40,7 @@ resource "azurerm_virtual_machine" "windows" {
   name                = "aoxlrtest"
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
-  vm_size             = "Standard D4ds v5"
+  vm_size             = "Standard_D4_v3"
   network_interface_ids = [
     azurerm_network_interface.nic.id
   ]
@@ -56,7 +56,7 @@ resource "azurerm_virtual_machine" "windows" {
     name              = "aorxlrtest_OS_Disk"
     caching           = "ReadWrite"
     create_option     = "FromImage"
-    managed_disk_type = "Standard SSD LRS"
+    managed_disk_type = "StandardSSD_LRS"
     os_type           = "Windows"
     disk_size_gb      = 127
   }
@@ -71,9 +71,9 @@ resource "azurerm_virtual_machine" "windows" {
 }
 resource "azurerm_managed_disk" "datadisk" {
   name                 = "aoxlr_DataDisk_0"
-  location            = var.resource_group_location
-  resource_group_name = var.resource_group_name
-  storage_account_type = "Standard SSD LRS"
+  location             = var.resource_group_location
+  resource_group_name  = var.resource_group_name
+  storage_account_type = "StandardSSD_LRS"
   create_option        = "Empty"
   disk_size_gb         = 128
 }
@@ -84,13 +84,11 @@ resource "azurerm_virtual_machine_data_disk_attachment" "disk_attach" {
   lun                = "0"
   caching            = "ReadWrite"
 }
-}
-/* resource "azurerm_network_security_group" "xlrnsg" {
-  name                = "xlrnsgaa"
+
+resource "azurerm_network_security_group" "xlrnsg" {
+  name                = "xlrnsg"
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
-
-
   security_rule {
     name                       = "Allow_RDP"
     priority                   = 200
@@ -103,11 +101,10 @@ resource "azurerm_virtual_machine_data_disk_attachment" "disk_attach" {
     destination_address_prefix = "*"
   }
 }
-
 resource "azurerm_subnet_network_security_group_association" "nsgassociation" {
   subnet_id                 = data.azurerm_subnet.snet.id
   network_security_group_id = azurerm_network_security_group.xlrnsg.id
   depends_on = [
     azurerm_network_security_group.xlrnsg
   ]
-} */
+}
