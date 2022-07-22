@@ -1,0 +1,154 @@
+variable "resource_group_name" {
+  type        = string
+  description = "Resource group name."
+  default     = "aot-n-zeaus-sceptre-xlrelease-rg"
+}
+
+variable "resource_group_location" {
+  type        = string
+  description = "Location where the storage accounts will be created."
+  default     = "East US"
+}
+variable "keyvault_name" {
+  description = "key vault to store secrets in"
+  default     = "xlreleasevault"
+  type        = string
+}
+
+variable "az_mssql_server_name" {
+  description = "Name of the Azure Microsoft SQL server"
+  type        = string
+}
+variable "az_mssql_network_rule" {
+  description = "Contains a map of virtual network/subnets to access server"
+  type        = map(object({
+    sqlvnet_rule_name        = string
+    subnet_name          = string
+    vnet_name            = string
+  }))
+  default     = {}
+}
+variable "location" {
+  default     = "eastus"
+  description = "Primary Azure region. Example: eastus"
+}
+variable "az_mssql_version" {
+  description = "The version for the new server. Valid values are: 2.0 (for v11 server) and 12.0 (for v12 server)"
+  type        = string
+}
+variable "azure_mssql_adm_login" {
+  description = "The Administrator Login for the Azure Miscrosoft SQL Server"
+  type        = string
+}
+variable "extended_auditing_policy" {
+  description = "Contains a map of extended auditing policy details"
+  type        = map(object(
+    {
+      storage_endpoint                        = string
+      storage_account_access_key              = string
+      storage_account_access_key_is_secondary = bool
+      retention_in_days                       = number
+    }))
+}
+
+variable "az_mssql_adm_secrets_name" {
+  description = "name of the secret key to store in key vault secret"
+  default     = null
+  type        = string
+}
+variable "az_mssql_db_name" {
+  description = "The name of the database to create"
+  type        = string
+  default     = null
+}
+
+variable user_supplied_pw {
+  description = "Specifies an admin password for the postgresdql server "
+  type        = string
+  default     = null
+}
+
+variable "az_mssql_firewall_rule" {
+  description = "Contains a map of firewall rule details"
+  type        = map(object({
+    firewall_rule_name        = string
+    start_ip_address          = string
+    end_ip_address            = string
+  }))
+  default     = {}
+}
+variable "az_mssql_elasticpool_name" {
+  description = "If using Elasticpool, the Elasticpool name"
+  default     = null
+  type        = string
+}
+variable "elasticpool_tier" {
+  description = "If using Elastic Pools, The tier of the elastic pool to be created. Valid values are Basic, Standard, and Premium"
+  default     = "Basic"
+  type        = string
+}
+variable "elasticpool_skuname"{
+  description = "If using Elastic Pools, The name of the SKU for the elastic pool. Valid values depend on the pattern used"
+  default     = "BasicPool"
+  type        = string
+}
+variable "elasticpool_capacity" {
+  description = "If using Elastic Pools, The total shared DTU for the elastic pool. Valid values depend on the edition which has been defined"
+  default     = "50"
+  type        = number
+}
+variable "elasticpool_db_dtu_min" {
+  description = "If using Elastic Pools, The minimum DTU which will be guaranteed to all databases in the elastic pool to be created"
+  default     = "0"
+  type        = number
+}
+variable "elasticpool_db_dtu_max" {
+  description = "If using Elastic Pools, If using Elasticpool, The maximum DTU which will be guaranteed to all databases in the elastic pool to be created"
+  default     = "5"
+  type        = number
+}
+variable "elasticpool_pool_size" {
+  description = "If using Elastic Pools,  The maximum size in GB that all databases in the elastic pool can grow to"
+  default     = "5"
+  type        = number
+}
+variable "secondary_resource_group_name" {
+  description = "Specify the azure sql secondary server Resource Group name only if you are opting for failover"
+  default     = null
+  type        = string
+}
+variable "az_mssql_ser_secondary_name" {
+  description = "Specify the azure sql secondary server name only if you are opting for failover"
+  default     = null
+  type        = string
+}
+variable "secondary_location" {
+  description = "Specify the azure sql secondary location, should be different from the primary"
+  default     = null
+  type        = string
+}
+variable "azurerm_mssql_failover_group_name" {
+  description = "Specify the failover group name only if you are opting for failover"
+  default     = null
+  type        = string
+}
+variable "failover_policy_mode" {
+  description = "Specify the failover policy mode only if you are opting for failover"
+  default     = "Automatic"
+  type        = string
+}
+variable "failover_policy_grace_minutes" {
+  description = "Specify the failover policy grace minutes only if you are opting for failover"
+  default     = "60"
+  type        = number
+}
+variable "tls_version" {
+  description = "Minimum TLS version on the SQL servers"
+  default     = "1.2"
+  type        = string
+}
+variable "enable_public_access" {
+  description = "Enable public access to the SQL servers"
+  default     = false
+  type        = bool
+}

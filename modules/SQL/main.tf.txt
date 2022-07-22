@@ -1,0 +1,122 @@
+resource "random_password" "azuresql_adm_pass" {
+  length = 12
+  special = true
+}
+
+data "azurerm_key_vault" "KV" {
+  count               = var.keyvault_name != null ? 1 : 0
+  name                = var.keyvault_name
+  resource_group_name = var.resource_group_name
+}
+
+data "azurerm_subnet" "sql_subnet" {
+   for_each  = var.az_mssql_network_rule
+   name			= each.value.subnet_name
+   resource_group_name  = var.resource_group_name
+   virtual_network_name = var.az_mssql_network_rule[each.key]["vnet_name"]
+}
+
+resource "azurerm_mssql_server" "az_mssql_server" {
+  name                          = var.az_mssql_server_name
+  resource_group_name           = var.resource_group_name
+  location                      = var.location
+  version                       = var.az_mssql_version
+  administrator_login           = var.azure_mssql_adm_login
+  administrator_login_password  = random_password.azuresql_adm_pass.result
+  minimum_tls_version           = var.tls_version
+  public_network_access_enabled = var.enable_public_access
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+resource "azurerm_mssql_server_extended_auditing_policy" "az_auditing_policy" {
+  for_each                                = var.extended_auditing_policy
+  server_id                               = azurerm_mssql_server.az_mssql_server.id
+  storage_endpoint                        = each.value.storage_endpoint
+  storage_account_access_key              = each.value.storage_account_access_key
+  storage_account_access_key_is_secondary = each.value.storage_account_access_key_is_secondary
+  retention_in_days                       = each.value.retention_in_days
+}
+
+resource "azurerm_mssql_database" "az_mssql_db" {
+  count                            = var.az_mssql_db_name != null ? 1 : 0
+  name                             = var.az_mssql_db_name
+  server_id                        = azurerm_mssql_server.az_mssql_server.id
+  tags = {}
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+resource "azurerm_key_vault_secret" "az_mssql_adm_secrets" {
+  count        = var.keyvault_name != null ? 1 : 0
+  name         = var.az_mssql_adm_secrets_name
+  value        = random_password.azuresql_adm_pass.result
+  key_vault_id = data.azurerm_key_vault.kv[0].id
+  content_type = "Admin Password"
+}
+
+resource "azurerm_mssql_firewall_rule" "az_mssql_firewall" {
+  for_each            = var.az_mssql_firewall_rule
+  name                = each.value.firewall_rule_name
+  server_id           = azurerm_mssql_server.az_mssql_server.id
+  start_ip_address    = each.value.start_ip_address
+  end_ip_address      = each.value.end_ip_address
+}
+
+resource "azurerm_mssql_virtual_network_rule" "vnet_allowed" {
+  for_each  = var.az_mssql_network_rule
+  name      = each.value.sqlvnet_rule_name
+  server_id = azurerm_mssql_server.az_mssql_server.id
+  subnet_id = data.azurerm_subnet.sql_subnet[each.key].id
+}
+
+resource "azurerm_mssql_elasticpool" "az_elasticpool" {
+  count               = var.az_mssql_elasticpool_name != null ? 1 : 0
+  name                = var.az_mssql_elasticpool_name
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  server_name         = azurerm_mssql_server.az_mssql_server.name
+  sku {
+    name     = var.elasticpool_skuname
+    capacity = var.elasticpool_capacity
+    tier     = var.elasticpool_tier
+  }
+  per_database_settings {
+    min_capacity = var.elasticpool_db_dtu_min
+    max_capacity = var.elasticpool_db_dtu_max
+  }
+  max_size_gb         = var.elasticpool_pool_size
+}
+
+resource "azurerm_mssql_server" "secondary" {
+  count                         = var.azurerm_mssql_failover_group_name != null ? 1 : 0
+  name                          = var.az_mssql_ser_secondary_name
+  resource_group_name           = var.secondary_resource_group_name
+  location                      = var.secondary_location
+  version                       = var.az_mssql_version
+  administrator_login           = var.azure_mssql_adm_login
+  administrator_login_password = var.user_supplied_pw != null ? var.user_supplied_pw : random_password.azuresql_adm_pass.result
+  minimum_tls_version           = var.tls_version
+  public_network_access_enabled = var.enable_public_access
+  tags = {}
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+resource "azurerm_mssql_failover_group" "az_mssql_failover" {
+  count               = var.azurerm_mssql_failover_group_name != null ? 1 : 0
+  name                = var.azurerm_mssql_failover_group_name
+  server_id           = azurerm_mssql_server.az_mssql_server.id
+  databases           = [azurerm_mssql_database.az_mssql_db[0].id]
+  partner_server {
+    id = azurerm_mssql_server.secondary[0].id
+  }
+
+  read_write_endpoint_failover_policy {
+    mode          = var.failover_policy_mode
+    grace_minutes = var.failover_policy_grace_minutes
+  }
+}
